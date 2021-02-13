@@ -136,7 +136,7 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 	}
 	else
 	{
-		ke::SafeStrcpy(error, maxlen, "Unable to retrieve find send prop info \"CTerrorPlayer::m_iAmmo\"");
+		ke::SafeStrcpy(error, maxlen, "Unable to find send prop info \"CTerrorPlayer::m_iAmmo\"");
 
 		return false;
 	}
@@ -159,7 +159,6 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 	}
 
 	gameconfs->CloseGameConfigFile(gc);
-
 	#define GAMEDATA_FILE	"survivor_object_collection"
 	if (!gameconfs->LoadGameConfigFile(GAMEDATA_FILE, &gc, error, sizeof(error))) 
 	{
@@ -199,7 +198,7 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 	{
 		const char* key;
 		int& offset;
-	} 
+	}
 	s_offsets[] = 
 	{
 		{ "SurvivorTeamSituation::m_friendInTrouble", offset_SurvivorTeamSituation_m_friendInTrouble },
@@ -269,7 +268,7 @@ void CSurvivorObjectCollectionExt::SDK_OnAllLoaded()
 {
 	SM_GET_LATE_IFACE(BINTOOLS, bintools);
 
-	PassInfo params_call_Weapon_GetSlot[] =
+	PassInfo params_vcall_Weapon_GetSlot[] =
 	{
 		{ PassType_Basic, PASSFLAG_BYVAL, sizeof(int), NULL, 0 },
 		{ PassType_Basic, PASSFLAG_BYVAL, sizeof(CBaseEntity *), NULL, 0 }
@@ -281,19 +280,19 @@ void CSurvivorObjectCollectionExt::SDK_OnAllLoaded()
 		{ PassType_Basic, PASSFLAG_BYVAL, sizeof(bool), NULL, 0 }
 	};
 
-	PassInfo param =
+	PassInfo param_call_GetTeamSituation =
 	{
 		PassType_Basic, PASSFLAG_BYVAL, sizeof(SurvivorTeamSituation *), NULL, 0
 	};
 
-	vcall_CBaseCombatCharacter_Weapon_GetSlot = bintools->CreateVCall(vtblindex_CBaseCombatCharacter_Weapon_GetSlot, 0, 0, &params_call_Weapon_GetSlot[1], &params_call_Weapon_GetSlot[0], 1);
+	vcall_CBaseCombatCharacter_Weapon_GetSlot = bintools->CreateVCall(vtblindex_CBaseCombatCharacter_Weapon_GetSlot, 0, 0, &params_vcall_Weapon_GetSlot[1], &params_vcall_Weapon_GetSlot[0], 1);
 
 	if (!vcall_CBaseCombatCharacter_Weapon_GetSlot)
 	{
 		smutils->LogError(myself, "Unable to create ICallWrapper for \"CBaseCombatCharacter::Weapon_GetSlot\"");
 	}
 
-	call_SurvivorBot_GetTeamSituation = bintools->CreateCall(pfn_SurvivorBot_GetTeamSituation, CallConv_ThisCall, &param, NULL, 0);
+	call_SurvivorBot_GetTeamSituation = bintools->CreateCall(pfn_SurvivorBot_GetTeamSituation, CallConv_ThisCall, &param_call_GetTeamSituation, NULL, 0);
 
 	if (!call_SurvivorBot_GetTeamSituation)
 	{
@@ -326,13 +325,11 @@ bool CSurvivorObjectCollectionExt::SDK_OnMetamodLoad(ISmmAPI *ismm, char *error,
 
 float CSurvivorObjectCollectionExt::GetTimeSinceAttackedByEnemy(CBaseEntity *player)
 {
-	float duration = *reinterpret_cast<float *>(reinterpret_cast<char *>(player) + offset_CTerrorPlayer_m_timeSinceAttackedByEnemyTimer + 4);
+	float timestamp = *reinterpret_cast<float *>(reinterpret_cast<char *>(player) + offset_CTerrorPlayer_m_timeSinceAttackedByEnemyTimer + 4);
 
-	if (duration > 0.0f)
+	if (timestamp > 0.0f)
 	{
-		float timeStamp = *reinterpret_cast<float *>(reinterpret_cast<char *>(player) + offset_CTerrorPlayer_m_timeSinceAttackedByEnemyTimer + 8);
-
-		return (gpGlobals->curtime - timeStamp);
+		return (gpGlobals->curtime - timestamp);
 	}
 
 	return 99999.898f;

@@ -28,18 +28,79 @@ inline CBaseEntity *EntityFromBaseHandle(void *addr, int offset)
 class CSurvivorObjectCollectionExt : public SDKExtension
 {
 public:
+    /**
+	 * @brief This is called after the initial loading sequence has been processed.
+	 *
+	 * @param error		Error message buffer.
+	 * @param maxlen	Size of error message buffer.
+	 * @param late		Whether or not the module was loaded after map load.
+	 * @return			True to succeed loading, false to fail.
+	 */
     virtual bool SDK_OnLoad(char *error, size_t maxlen, bool late);
+
+    /**
+	 * @brief This is called right before the extension is unloaded.
+	 */
     virtual void SDK_OnUnload();
+
+    /**
+	 * @brief This is called once all known extensions have been loaded.
+	 * Note: It is is a good idea to add natives here, if any are provided.
+	 */
     virtual void SDK_OnAllLoaded();
-    virtual bool QueryRunning(char *error, size_t maxlen);
 #ifdef SMEXT_CONF_METAMOD
+    /**
+	 * @brief Called when Metamod is attached, before the extension version is called.
+	 *
+	 * @param error			Error buffer.
+	 * @param maxlen		Maximum size of error buffer.
+	 * @param late			Whether or not Metamod considers this a late load.
+	 * @return				True to succeed, false to fail.
+	 */
     virtual bool SDK_OnMetamodLoad(ISmmAPI *ismm, char *error, size_t maxlen, bool late);
 #endif
-    int GetAmmoCount(CBaseEntity *player, int ammoIndex) { return *reinterpret_cast<int *>(reinterpret_cast<char *>(player) + sendprop_m_iAmmo + (ammoIndex * 4)); }
+    /**
+	 * @brief Return false to tell Core that your extension should be considered unusable.
+	 *
+	 * @param error				Error buffer.
+	 * @param maxlength			Size of error buffer.
+	 * @return					True on success, false otherwise.
+	 */
+    virtual bool QueryRunning(char *error, size_t maxlen);
+
+    /**
+	 * @brief Asks the extension whether it's safe to remove an external 
+	 * interface it's using.  If it's not safe, return false, and the 
+	 * extension will be unloaded afterwards.
+	 *
+	 * NOTE: It is important to also hook NotifyInterfaceDrop() in order to clean 
+	 * up resources.
+	 *
+	 * @param pInterface		Pointer to interface being dropped.  This 
+	 * 							pointer may be opaque, and it should not 
+	 *							be queried using SMInterface functions unless 
+	 *							it can be verified to match an existing 
+	 *							pointer of known type.
+	 * @return					True to continue, false to unload this 
+	 * 							extension afterwards.
+	 */
+	virtual bool QueryInterfaceDrop(SMInterface *pInterface);
+
+    /**
+	 * @brief Notifies the extension that an external interface it uses is being removed.
+	 *
+	 * @param pInterface		Pointer to interface being dropped.  This
+	 * 							pointer may be opaque, and it should not 
+	 *							be queried using SMInterface functions unless 
+	 *							it can be verified to match an existing 
+	 */
+	virtual void NotifyInterfaceDrop(SMInterface *pInterface);
+
+    int GetAmmoCount(CBaseEntity *player, int ammoIndex) { return *reinterpret_cast<int *>(reinterpret_cast<byte *>(player) + sendprop_m_iAmmo + (ammoIndex * 4)); }
     int GetPrimaryAmmoType(CBaseEntity *weapon);
     int GetMaxCarry(const char *wpnName);
 
-    int GetTankCount() { return *reinterpret_cast<int *>(reinterpret_cast<char *>(addr_TheDirector) + offset_CDirector_m_iTankCount); }
+    int GetTankCount() { return *reinterpret_cast<int *>(reinterpret_cast<byte *>(addr_TheDirector) + offset_CDirector_m_iTankCount); }
 
     float GetTimeSinceAttackedByEnemy(CBaseEntity *player);
 

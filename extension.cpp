@@ -251,16 +251,19 @@ void CSurvivorObjectCollectionExt::SDK_OnUnload()
 	if (detour_SurvivorCollectObject_ShouldGiveUp)
 	{
 		detour_SurvivorCollectObject_ShouldGiveUp->Destroy();
+		detour_SurvivorCollectObject_ShouldGiveUp = NULL;
 	}
 
 	if (vcall_CBaseCombatCharacter_Weapon_GetSlot)
 	{
 		vcall_CBaseCombatCharacter_Weapon_GetSlot->Destroy();
+		vcall_CBaseCombatCharacter_Weapon_GetSlot = NULL;
 	}
 
 	if (call_SurvivorBot_GetTeamSituation)
 	{
 		call_SurvivorBot_GetTeamSituation->Destroy();
+		call_SurvivorBot_GetTeamSituation = NULL;
 	}
 }
 
@@ -296,7 +299,7 @@ void CSurvivorObjectCollectionExt::SDK_OnAllLoaded()
 
 	if (!call_SurvivorBot_GetTeamSituation)
 	{
-		smutils->LogError(myself, "Unable to create ICallWrapper for \"SurvivorBot::GetTeamSItuation\"");
+		smutils->LogError(myself, "Unable to create ICallWrapper for \"SurvivorBot::GetTeamSituation\"");
 	}
 
 	call_SurvivorUseObject_ShouldGiveUp = bintools->CreateCall(pfn_SurvivorUseObject_ShouldGiveUp, CallConv_ThisCall, &params_call_ShouldGiveUp[1], &params_call_ShouldGiveUp[0], 1);
@@ -305,13 +308,6 @@ void CSurvivorObjectCollectionExt::SDK_OnAllLoaded()
 	{
 		smutils->LogError(myself, "Unable to create ICallWrapper for \"SurvivorUseObject::ShouldGiveUp\"");
 	}
-}
-
-bool CSurvivorObjectCollectionExt::QueryRunning(char *error, size_t maxlength)
-{
-	SM_CHECK_IFACE(BINTOOLS, bintools);
-
-	return true;
 }
 
 bool CSurvivorObjectCollectionExt::SDK_OnMetamodLoad(ISmmAPI *ismm, char *error, size_t maxlen, bool late)
@@ -323,9 +319,31 @@ bool CSurvivorObjectCollectionExt::SDK_OnMetamodLoad(ISmmAPI *ismm, char *error,
 	return true;
 }
 
+bool CSurvivorObjectCollectionExt::QueryRunning(char *error, size_t maxlength)
+{
+	SM_CHECK_IFACE(BINTOOLS, bintools);
+
+	return true;
+}
+
+bool CSurvivorObjectCollectionExt::QueryInterfaceDrop(SMInterface *pInterface)
+{
+	if (pInterface == bintools)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void CSurvivorObjectCollectionExt::NotifyInterfaceDrop(SMInterface *pInterface)
+{
+	SDK_OnUnload();
+}
+
 float CSurvivorObjectCollectionExt::GetTimeSinceAttackedByEnemy(CBaseEntity *player)
 {
-	float timestamp = *reinterpret_cast<float *>(reinterpret_cast<char *>(player) + offset_CTerrorPlayer_m_timeSinceAttackedByEnemyTimer + 4);
+	float timestamp = *reinterpret_cast<float *>(reinterpret_cast<byte *>(player) + offset_CTerrorPlayer_m_timeSinceAttackedByEnemyTimer + 4);
 
 	if (timestamp > 0.0f)
 	{
@@ -350,7 +368,7 @@ int CSurvivorObjectCollectionExt::GetPrimaryAmmoType(CBaseEntity *weapon)
 		}
 	}
 
-	return *reinterpret_cast<int *>(reinterpret_cast<char *>(weapon) + offset);
+	return *reinterpret_cast<int *>(reinterpret_cast<byte *>(weapon) + offset);
 }
 
 CBaseEntity *CSurvivorObjectCollectionExt::Weapon_GetSlot(CBaseEntity *player, int slot)

@@ -6,7 +6,7 @@ CGlobalVars *gpGlobals = NULL;
 
 SMEXT_LINK(&g_SurvivorObjectCollectionExt);
 
-static int GetMaxCarryOfWeapon(const char *wpnName)
+static int GetMaxCarryOfWeapon(const char *pWeaponName)
 {
 	static ConVarRef r_ammo_assaultrifle_max("ammo_assaultrifle_max"),
 			r_ammo_smg_max("ammo_smg_max"),
@@ -18,49 +18,49 @@ static int GetMaxCarryOfWeapon(const char *wpnName)
 			r_ammo_sniperrifle_max("ammo_sniperrifle_max"),
 			r_ammo_pistol_max("ammo_pistol_max");
 
-	if (!V_strcmp(wpnName, "weapon_smg") || !V_strcmp(wpnName, "weapon_smg_silenced") || !V_strcmp(wpnName, "weapon_smg_mp5"))
+	if (!V_strcmp(pWeaponName, "weapon_smg") || !V_strcmp(pWeaponName, "weapon_smg_silenced") || !V_strcmp(pWeaponName, "weapon_smg_mp5"))
 	{
 		return r_ammo_smg_max.GetInt();
 	}
 
-	if (!V_strcmp(wpnName, "weapon_pumpshotgun") || !V_strcmp(wpnName, "weapon_shotgun_chrome"))
+	if (!V_strcmp(pWeaponName, "weapon_pumpshotgun") || !V_strcmp(pWeaponName, "weapon_shotgun_chrome"))
 	{
 		return r_ammo_shotgun_max.GetInt();
 	}
 
-	if (!V_strcmp(wpnName, "weapon_autoshotgun") || !V_strcmp(wpnName, "weapon_shotgun_spas"))
+	if (!V_strcmp(pWeaponName, "weapon_autoshotgun") || !V_strcmp(pWeaponName, "weapon_shotgun_spas"))
 	{
 		return r_ammo_autoshotgun_max.GetInt();
 	}
 
-	if (!V_strcmp(wpnName, "weapon_rifle") || !V_strcmp(wpnName, "weapon_rifle_ak47") 
-		|| !V_strcmp(wpnName, "weapon_rifle_desert") || !V_strcmp(wpnName, "weapon_rifle_sg552"))
+	if (!V_strcmp(pWeaponName, "weapon_rifle") || !V_strcmp(pWeaponName, "weapon_rifle_ak47") 
+		|| !V_strcmp(pWeaponName, "weapon_rifle_desert") || !V_strcmp(pWeaponName, "weapon_rifle_sg552"))
 	{
 		return r_ammo_assaultrifle_max.GetInt();
 	}
 
-	if (!V_strcmp(wpnName, "weapon_rifle_m60"))
+	if (!V_strcmp(pWeaponName, "weapon_rifle_m60"))
 	{
 		return r_ammo_m60_max.GetInt();
 	}
 
-	if (!V_strcmp(wpnName, "weapon_hunting_rifle"))
+	if (!V_strcmp(pWeaponName, "weapon_hunting_rifle"))
 	{
 		return r_ammo_huntingrifle_max.GetInt();
 	}
 
-	if (!V_strcmp(wpnName, "weapon_sniper_military") || !V_strcmp(wpnName, "weapon_sniper_awp") 
-		|| !V_strcmp(wpnName, "weapon_sniper_scout"))
+	if (!V_strcmp(pWeaponName, "weapon_sniper_military") || !V_strcmp(pWeaponName, "weapon_sniper_awp") 
+		|| !V_strcmp(pWeaponName, "weapon_sniper_scout"))
 	{
 		return r_ammo_sniperrifle_max.GetInt();
 	}
 
-	if (!V_strcmp(wpnName, "weapon_grenade_launcher"))
+	if (!V_strcmp(pWeaponName, "weapon_grenade_launcher"))
 	{
 		return r_ammo_grenadelauncher_max.GetInt();
 	}
 
-	if (!V_strcmp(wpnName, "weapon_pistol") || !V_strcmp(wpnName, "weapon_pistol_magnum"))
+	if (!V_strcmp(pWeaponName, "weapon_pistol") || !V_strcmp(pWeaponName, "weapon_pistol_magnum"))
 	{
 		return r_ammo_pistol_max.GetInt();
 	}
@@ -68,50 +68,49 @@ static int GetMaxCarryOfWeapon(const char *wpnName)
 	return -1;
 }
 
-DETOUR_DECL_MEMBER1(Handler_SurvivorCollectObject_ShouldGiveUp, bool, CBaseEntity *, me)
+DETOUR_DECL_MEMBER1(DetourFunc_SurvivorCollectObject_ShouldGiveUp, bool, CBaseEntity *, pBot)
 {
-	SurvivorTeamSituation *situation = g_SurvivorObjectCollectionExt.GetTeamSituation(me);
+	SurvivorTeamSituation *pSituation = g_SurvivorObjectCollectionExt.GetTeamSituation(pBot);
 
-	if (g_SurvivorObjectCollectionExt.GetTonguedFriend(situation))
+	if (g_SurvivorObjectCollectionExt.GetTonguedFriend(pSituation))
 	{
 		return true;
 	}
 
-	if (g_SurvivorObjectCollectionExt.GetPouncedFriend(situation))
+	if (g_SurvivorObjectCollectionExt.GetPouncedFriend(pSituation))
 	{
 		return true;
 	}
 
-	if (g_SurvivorObjectCollectionExt.GetPummeledFriend(situation))
+	if (g_SurvivorObjectCollectionExt.GetPummeledFriend(pSituation))
 	{
 		return true;
 	}
 
-	if (g_SurvivorObjectCollectionExt.GetFriendIntrouble(situation))
+	if (g_SurvivorObjectCollectionExt.GetFriendIntrouble(pSituation))
 	{
 		return true;
 	}
 
-	Action<CBaseEntity> *action = reinterpret_cast<Action<CBaseEntity> *>(this);
+	Action<CBaseEntity> *pAction = reinterpret_cast<Action<CBaseEntity> *>(this);
 
-	if (g_SurvivorObjectCollectionExt.GetTankCount() > 0 || g_SurvivorObjectCollectionExt.GetTimeSinceAttackedByEnemy(me) < 2.0f)
+	if (g_SurvivorObjectCollectionExt.GetTankCount() > 0 || g_SurvivorObjectCollectionExt.GetTimeSinceAttackedByEnemy(pBot) < 2.0f)
 	{
-		CBaseEntity *obj = g_SurvivorObjectCollectionExt.GetUseObject(action);
+		CBaseEntity *pEntity = g_SurvivorObjectCollectionExt.GetUseObject(pAction);
 
-		if (obj)
+		if (pEntity)
 		{
-			const char *cls = gamehelpers->GetEntityClassname(obj);
+			const char *pClassname = gamehelpers->GetEntityClassname(pEntity);
 
-			if (!V_strcmp(cls, "weapon_ammo_spawn"))
+			if (!V_strcmp(pClassname, "weapon_ammo_spawn"))
 			{
-				CBaseEntity *wpn = g_SurvivorObjectCollectionExt.Weapon_GetSlot(me, WEAPON_SLOT_RIFLE);
+				CBaseEntity *pWeapon = g_SurvivorObjectCollectionExt.Weapon_GetSlot(pBot, WEAPON_SLOT_RIFLE);
 
-				if (wpn) 
+				if (pWeapon) 
 				{
-					const char *wpnName = gamehelpers->GetEntityClassname(wpn);
+					const char *pWeaponName = gamehelpers->GetEntityClassname(pWeapon);
 
-					if (g_SurvivorObjectCollectionExt.GetAmmoCount(me, g_SurvivorObjectCollectionExt.GetPrimaryAmmoType(wpn)) >= 
-						(GetMaxCarryOfWeapon(wpnName) * 0.4f))	// 40% of max carry is vanilla behavior
+					if (g_SurvivorObjectCollectionExt.GetAmmoCount(pBot, g_SurvivorObjectCollectionExt.GetPrimaryAmmoType(pWeapon)) >= (GetMaxCarryOfWeapon(pWeaponName) * 0.4f))
 					{
 						return true;
 					}
@@ -120,11 +119,9 @@ DETOUR_DECL_MEMBER1(Handler_SurvivorCollectObject_ShouldGiveUp, bool, CBaseEntit
 				}
 			}
 		}
-
-		// return true;	// vanilla behavior
 	}
 
-	return g_SurvivorObjectCollectionExt.ShouldGiveUp(action, me);
+	return g_SurvivorObjectCollectionExt.ShouldGiveUp(pAction, pBot);
 }
 
 bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool late)
@@ -132,11 +129,11 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 	sm_sendprop_info_t info;
 	if (gamehelpers->FindSendPropInfo("CTerrorPlayer", "m_iAmmo", &info))
 	{
-		sendprop_m_iAmmo = info.actual_offset;
+		m_iSendProp_CTerrorPlayer_m_iAmmo = info.actual_offset;
 	}
 	else
 	{
-		ke::SafeStrcpy(error, maxlen, "Unable to find send prop info \"CTerrorPlayer::m_iAmmo\"");
+		ke::SafeStrcpy(error, maxlen, "Unable to find send prop info for \"CTerrorPlayer::m_iAmmo\"");
 
 		return false;
 	}
@@ -149,7 +146,7 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 		return false;
 	}
 
-	if (!gc->GetOffset("Weapon_GetSlot", &vtblindex_CBaseCombatCharacter_Weapon_GetSlot))
+	if (!gc->GetOffset("Weapon_GetSlot", &m_iVtblIndex_CBaseCombatCharacter_Weapon_GetSlot))
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to get offset for \"Weapon_GetSlot\"");
 
@@ -167,7 +164,7 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 		return false;
 	}
 
-	if (!gc->GetAddress("CDirector", &addr_TheDirector))
+	if (!gc->GetAddress("CDirector", &m_pObj_CDirector_TheDirector))
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to get address of CDirector instance");
 
@@ -176,7 +173,7 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 		return false;
 	}
 
-	if (!gc->GetMemSig("SurvivorBot::GetTeamSituation", &pfn_SurvivorBot_GetTeamSituation))
+	if (!gc->GetMemSig("SurvivorBot::GetTeamSituation", &m_pfn_SurvivorBot_GetTeamSituation))
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to get mem sig for \"SurvivorBot::GetTeamSituation\"");
 
@@ -185,7 +182,7 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 		return false;
 	}
 
-	if (!gc->GetMemSig("SurvivorUseObject::ShouldGiveUp", &pfn_SurvivorUseObject_ShouldGiveUp))
+	if (!gc->GetMemSig("SurvivorUseObject::ShouldGiveUp", &m_pfn_SurvivorUseObject_ShouldGiveUp))
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to get mem sig for \"SurvivorUseObject::ShouldGiveUp\"");
 
@@ -201,13 +198,13 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 	}
 	s_offsets[] = 
 	{
-		{ "SurvivorTeamSituation::m_friendInTrouble", offset_SurvivorTeamSituation_m_friendInTrouble },
-		{ "SurvivorTeamSituation::m_tonguedFriend", offset_SurvivorTeamSituation_m_tonguedFriend },
-		{ "SurvivorTeamSituation::m_pouncedFriend", offset_SurvivorTeamSituation_m_pouncedFriend },
-		{ "SurvivorTeamSituation::m_pummeledFriend", offset_SurvivorTeamSituation_m_pummeledFriend },
-		{ "SurvivorCollectObject::m_useObject", offset_SurvivorCollectObject_m_useObject },
-		{ "CTerrorPlayer::m_timeSinceAttackedByEnemyTimer", offset_CTerrorPlayer_m_timeSinceAttackedByEnemyTimer },
-		{ "CDirector::m_iTankCount", offset_CDirector_m_iTankCount },
+		{ "SurvivorTeamSituation::m_friendInTrouble", m_iSurvivorTeamSituation_m_friendInTrouble },
+		{ "SurvivorTeamSituation::m_tonguedFriend", m_iSurvivorTeamSituation_m_tonguedFriend },
+		{ "SurvivorTeamSituation::m_pouncedFriend", m_iSurvivorTeamSituation_m_pouncedFriend },
+		{ "SurvivorTeamSituation::m_pummeledFriend", m_iSurvivorTeamSituation_m_pummeledFriend },
+		{ "SurvivorCollectObject::m_useObject", m_iSurvivorCollectObject_m_useObject },
+		{ "CTerrorPlayer::m_timeSinceAttackedByEnemyTimer", m_iCTerrorPlayer_m_timeSinceAttackedByEnemyTimer },
+		{ "CDirector::m_iTankCount", m_iCDirector_m_iTankCount },
 	};
 
 	for (auto&& el : s_offsets) 
@@ -224,11 +221,11 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 
 	CDetourManager::Init(smutils->GetScriptingEngine(), gc);
 
-	detour_SurvivorCollectObject_ShouldGiveUp = DETOUR_CREATE_MEMBER(Handler_SurvivorCollectObject_ShouldGiveUp, "SurvivorCollectObject::ShouldGiveUp");
+	m_pDetour_SurvivorCollectObject_ShouldGiveUp = DETOUR_CREATE_MEMBER(DetourFunc_SurvivorCollectObject_ShouldGiveUp, "SurvivorCollectObject::ShouldGiveUp");
 
-	if (detour_SurvivorCollectObject_ShouldGiveUp)
+	if (m_pDetour_SurvivorCollectObject_ShouldGiveUp)
 	{
-		detour_SurvivorCollectObject_ShouldGiveUp->EnableDetour();
+		m_pDetour_SurvivorCollectObject_ShouldGiveUp->EnableDetour();
 	}
 	else
 	{
@@ -248,63 +245,65 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 
 void CSurvivorObjectCollectionExt::SDK_OnUnload()
 {
-	if (detour_SurvivorCollectObject_ShouldGiveUp)
+	if (m_pDetour_SurvivorCollectObject_ShouldGiveUp)
 	{
-		detour_SurvivorCollectObject_ShouldGiveUp->Destroy();
-		detour_SurvivorCollectObject_ShouldGiveUp = NULL;
+		m_pDetour_SurvivorCollectObject_ShouldGiveUp->Destroy();
+		m_pDetour_SurvivorCollectObject_ShouldGiveUp = NULL;
 	}
 
-	if (vcall_CBaseCombatCharacter_Weapon_GetSlot)
+	if (m_pCallWrap_CBaseCombatCharacter_Weapon_GetSlot)
 	{
-		vcall_CBaseCombatCharacter_Weapon_GetSlot->Destroy();
-		vcall_CBaseCombatCharacter_Weapon_GetSlot = NULL;
+		m_pCallWrap_CBaseCombatCharacter_Weapon_GetSlot->Destroy();
+		m_pCallWrap_CBaseCombatCharacter_Weapon_GetSlot = NULL;
 	}
 
-	if (call_SurvivorBot_GetTeamSituation)
+	if (m_pCallWrap_SurvivorBot_GetTeamSituation)
 	{
-		call_SurvivorBot_GetTeamSituation->Destroy();
-		call_SurvivorBot_GetTeamSituation = NULL;
+		m_pCallWrap_SurvivorBot_GetTeamSituation->Destroy();
+		m_pCallWrap_SurvivorBot_GetTeamSituation = NULL;
 	}
 }
 
 void CSurvivorObjectCollectionExt::SDK_OnAllLoaded()
 {
-	SM_GET_LATE_IFACE(BINTOOLS, bintools);
+	SM_GET_LATE_IFACE(BINTOOLS, m_pBinTools);
 
-	PassInfo params_vcall_Weapon_GetSlot[] =
+	PassInfo passInfo_CBaseCombatCharacter_Weapon_GetSlot[] =
 	{
 		{ PassType_Basic, PASSFLAG_BYVAL, sizeof(int), NULL, 0 },
 		{ PassType_Basic, PASSFLAG_BYVAL, sizeof(CBaseEntity *), NULL, 0 }
 	};
 
-	PassInfo params_call_ShouldGiveUp[] =
+	PassInfo passInfo_SurvivorUseObject_ShouldGiveUp[] =
 	{
 		{ PassType_Basic, PASSFLAG_BYVAL, sizeof(CBaseEntity *), NULL, 0 },
 		{ PassType_Basic, PASSFLAG_BYVAL, sizeof(bool), NULL, 0 }
 	};
 
-	PassInfo param_call_GetTeamSituation =
+	PassInfo passInfo_SurvivorBot_GetTeamSituation =
 	{
 		PassType_Basic, PASSFLAG_BYVAL, sizeof(SurvivorTeamSituation *), NULL, 0
 	};
 
-	vcall_CBaseCombatCharacter_Weapon_GetSlot = bintools->CreateVCall(vtblindex_CBaseCombatCharacter_Weapon_GetSlot, 0, 0, &params_vcall_Weapon_GetSlot[1], &params_vcall_Weapon_GetSlot[0], 1);
+	m_pCallWrap_CBaseCombatCharacter_Weapon_GetSlot = m_pBinTools->CreateVCall(m_iVtblIndex_CBaseCombatCharacter_Weapon_GetSlot, 0, 0, 
+		&passInfo_CBaseCombatCharacter_Weapon_GetSlot[1], &passInfo_CBaseCombatCharacter_Weapon_GetSlot[0], 1);
 
-	if (!vcall_CBaseCombatCharacter_Weapon_GetSlot)
+	if (!m_pCallWrap_CBaseCombatCharacter_Weapon_GetSlot)
 	{
 		smutils->LogError(myself, "Unable to create ICallWrapper for \"CBaseCombatCharacter::Weapon_GetSlot\"");
 	}
 
-	call_SurvivorBot_GetTeamSituation = bintools->CreateCall(pfn_SurvivorBot_GetTeamSituation, CallConv_ThisCall, &param_call_GetTeamSituation, NULL, 0);
+	m_pCallWrap_SurvivorBot_GetTeamSituation = m_pBinTools->CreateCall(m_pfn_SurvivorBot_GetTeamSituation, CallConv_ThisCall, &passInfo_SurvivorBot_GetTeamSituation, NULL, 0);
 
-	if (!call_SurvivorBot_GetTeamSituation)
+	if (!m_pCallWrap_SurvivorBot_GetTeamSituation)
 	{
 		smutils->LogError(myself, "Unable to create ICallWrapper for \"SurvivorBot::GetTeamSituation\"");
 	}
 
-	call_SurvivorUseObject_ShouldGiveUp = bintools->CreateCall(pfn_SurvivorUseObject_ShouldGiveUp, CallConv_ThisCall, &params_call_ShouldGiveUp[1], &params_call_ShouldGiveUp[0], 1);
+	m_pCallWrap_SurvivorUseObject_ShouldGiveUp = m_pBinTools->CreateCall(m_pfn_SurvivorUseObject_ShouldGiveUp, CallConv_ThisCall, 
+		&passInfo_SurvivorUseObject_ShouldGiveUp[1], &passInfo_SurvivorUseObject_ShouldGiveUp[0], 1);
 
-	if (!call_SurvivorUseObject_ShouldGiveUp)
+	if (!m_pCallWrap_SurvivorUseObject_ShouldGiveUp)
 	{
 		smutils->LogError(myself, "Unable to create ICallWrapper for \"SurvivorUseObject::ShouldGiveUp\"");
 	}
@@ -321,14 +320,14 @@ bool CSurvivorObjectCollectionExt::SDK_OnMetamodLoad(ISmmAPI *ismm, char *error,
 
 bool CSurvivorObjectCollectionExt::QueryRunning(char *error, size_t maxlength)
 {
-	SM_CHECK_IFACE(BINTOOLS, bintools);
+	SM_CHECK_IFACE(BINTOOLS, m_pBinTools);
 
 	return true;
 }
 
 bool CSurvivorObjectCollectionExt::QueryInterfaceDrop(SMInterface *pInterface)
 {
-	if (pInterface == bintools)
+	if (pInterface == m_pBinTools)
 	{
 		return false;
 	}
@@ -341,9 +340,9 @@ void CSurvivorObjectCollectionExt::NotifyInterfaceDrop(SMInterface *pInterface)
 	SDK_OnUnload();
 }
 
-float CSurvivorObjectCollectionExt::GetTimeSinceAttackedByEnemy(CBaseEntity *player)
+float CSurvivorObjectCollectionExt::GetTimeSinceAttackedByEnemy(CBaseEntity *pPlayer)
 {
-	float timestamp = *reinterpret_cast<float *>(reinterpret_cast<byte *>(player) + offset_CTerrorPlayer_m_timeSinceAttackedByEnemyTimer + 4);
+	float timestamp = *reinterpret_cast<float *>(reinterpret_cast<byte *>(pPlayer) + m_iCTerrorPlayer_m_timeSinceAttackedByEnemyTimer + 4);
 
 	if (timestamp > 0.0f)
 	{
@@ -353,64 +352,64 @@ float CSurvivorObjectCollectionExt::GetTimeSinceAttackedByEnemy(CBaseEntity *pla
 	return 99999.898f;
 }
 
-int CSurvivorObjectCollectionExt::GetPrimaryAmmoType(CBaseEntity *weapon)
+int CSurvivorObjectCollectionExt::GetPrimaryAmmoType(CBaseEntity *pWeapon)
 {
-	static int offset = -1;
+	static int m_iPrimaryAmmoType = -1;
 
-	if (offset == -1)
+	if (m_iPrimaryAmmoType == -1)
 	{
-		datamap_t *pMap = gamehelpers->GetDataMap(weapon);
+		datamap_t *pMap = gamehelpers->GetDataMap(pWeapon);
 
 		sm_datatable_info_t info;
 		if (gamehelpers->FindDataMapInfo(pMap, "m_iPrimaryAmmoType", &info))
 		{
-			offset = info.actual_offset;
+			m_iPrimaryAmmoType = info.actual_offset;
 		}
 	}
 
-	return *reinterpret_cast<int *>(reinterpret_cast<byte *>(weapon) + offset);
+	return *reinterpret_cast<int *>(reinterpret_cast<byte *>(pWeapon) + m_iPrimaryAmmoType);
 }
 
-CBaseEntity *CSurvivorObjectCollectionExt::Weapon_GetSlot(CBaseEntity *player, int slot)
+CBaseEntity *CSurvivorObjectCollectionExt::Weapon_GetSlot(CBaseEntity *pPlayer, int slot)
 {
 	struct 
 	{
-		CBaseEntity *player;
+		CBaseEntity *pPlayer;
 		int slot;
 	} stack = 
 	{
-		player,
+		pPlayer,
 		slot
 	};
 
 	CBaseEntity *result = NULL;
-	vcall_CBaseCombatCharacter_Weapon_GetSlot->Execute(&stack, &result);
+	m_pCallWrap_CBaseCombatCharacter_Weapon_GetSlot->Execute(&stack, &result);
 
 	return result;
 }
 
-SurvivorTeamSituation *CSurvivorObjectCollectionExt::GetTeamSituation(CBaseEntity *bot)
+SurvivorTeamSituation *CSurvivorObjectCollectionExt::GetTeamSituation(CBaseEntity *pBot)
 {
 	SurvivorTeamSituation *result = NULL;
-	call_SurvivorBot_GetTeamSituation->Execute(&bot, &result);
+	m_pCallWrap_SurvivorBot_GetTeamSituation->Execute(&pBot, &result);
 
 	return result;
 }
 
-bool CSurvivorObjectCollectionExt::ShouldGiveUp(Action<CBaseEntity> *action, CBaseEntity *bot)
+bool CSurvivorObjectCollectionExt::ShouldGiveUp(Action<CBaseEntity> *pAction, CBaseEntity *pBot)
 {
 	struct 
 	{
-		Action<CBaseEntity> *action;
-		CBaseEntity *bot;
+		Action<CBaseEntity> *pAction;
+		CBaseEntity *pBot;
 	} stack = 
 	{
-		action,
-		bot
+		pAction,
+		pBot
 	};
 
 	bool result;
-	call_SurvivorUseObject_ShouldGiveUp->Execute(&stack, &result);
+	m_pCallWrap_SurvivorUseObject_ShouldGiveUp->Execute(&stack, &result);
 
 	return result;
 }

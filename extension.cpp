@@ -138,55 +138,56 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 		return false;
 	}
 
-	IGameConfig *gc;
-	if (!gameconfs->LoadGameConfigFile("sdktools.games", &gc, error, maxlen)) 
+	IGameConfig *pGameConfig = NULL;
+
+	if (!gameconfs->LoadGameConfigFile("sdktools.games", &pGameConfig, error, maxlen)) 
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to load gamedata file \"sdktools.games.txt\"");
 
 		return false;
 	}
 
-	if (!gc->GetOffset("Weapon_GetSlot", &m_iVtblIndex_CBaseCombatCharacter_Weapon_GetSlot))
+	if (!pGameConfig->GetOffset("Weapon_GetSlot", &m_iVtblIndex_CBaseCombatCharacter_Weapon_GetSlot))
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to get offset for \"Weapon_GetSlot\"");
 
-		gameconfs->CloseGameConfigFile(gc);
+		gameconfs->CloseGameConfigFile(pGameConfig);
 
 		return false;
 	}
 
-	gameconfs->CloseGameConfigFile(gc);
+	gameconfs->CloseGameConfigFile(pGameConfig);
 	#define GAMEDATA_FILE	"survivor_object_collection"
-	if (!gameconfs->LoadGameConfigFile(GAMEDATA_FILE, &gc, error, sizeof(error))) 
+	if (!gameconfs->LoadGameConfigFile(GAMEDATA_FILE, &pGameConfig, error, sizeof(error))) 
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to load gamedata file \"" GAMEDATA_FILE ".txt\"");
 
 		return false;
 	}
 
-	if (!gc->GetAddress("CDirector", &m_pObj_CDirector_TheDirector))
+	if (!pGameConfig->GetAddress("CDirector", &m_pObj_CDirector_TheDirector))
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to get address of CDirector instance");
 
-		gameconfs->CloseGameConfigFile(gc);
+		gameconfs->CloseGameConfigFile(pGameConfig);
 
 		return false;
 	}
 
-	if (!gc->GetMemSig("SurvivorBot::GetTeamSituation", &m_pfn_SurvivorBot_GetTeamSituation))
+	if (!pGameConfig->GetMemSig("SurvivorBot::GetTeamSituation", &m_pfn_SurvivorBot_GetTeamSituation))
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to get mem sig for \"SurvivorBot::GetTeamSituation\"");
 
-		gameconfs->CloseGameConfigFile(gc);
+		gameconfs->CloseGameConfigFile(pGameConfig);
 
 		return false;
 	}
 
-	if (!gc->GetMemSig("SurvivorUseObject::ShouldGiveUp", &m_pfn_SurvivorUseObject_ShouldGiveUp))
+	if (!pGameConfig->GetMemSig("SurvivorUseObject::ShouldGiveUp", &m_pfn_SurvivorUseObject_ShouldGiveUp))
 	{
 		ke::SafeStrcpy(error, maxlen, "Unable to get mem sig for \"SurvivorUseObject::ShouldGiveUp\"");
 
-		gameconfs->CloseGameConfigFile(gc);
+		gameconfs->CloseGameConfigFile(pGameConfig);
 
 		return false;
 	}
@@ -209,17 +210,17 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 
 	for (auto&& el : s_offsets) 
 	{
-		if (!gc->GetOffset(el.key, &el.offset)) 
+		if (!pGameConfig->GetOffset(el.key, &el.offset)) 
 		{
 			ke::SafeSprintf(error, maxlen, "Unable to get offset for \"%s\"", el.key);
 
-			gameconfs->CloseGameConfigFile(gc);
+			gameconfs->CloseGameConfigFile(pGameConfig);
 
 			return false;
 		}
 	}
 
-	CDetourManager::Init(smutils->GetScriptingEngine(), gc);
+	CDetourManager::Init(smutils->GetScriptingEngine(), pGameConfig);
 
 	m_pDetour_SurvivorCollectObject_ShouldGiveUp = DETOUR_CREATE_MEMBER(DetourFunc_SurvivorCollectObject_ShouldGiveUp, "SurvivorCollectObject::ShouldGiveUp");
 
@@ -231,12 +232,12 @@ bool CSurvivorObjectCollectionExt::SDK_OnLoad(char *error, size_t maxlen, bool l
 	{
 		ke::SafeStrcpy(error, maxlen, "Failed to initialize detour SurvivorCollectObject::ShouldGiveUp");
 
-		gameconfs->CloseGameConfigFile(gc);
+		gameconfs->CloseGameConfigFile(pGameConfig);
 
 		return false;
 	}
 
-	gameconfs->CloseGameConfigFile(gc);
+	gameconfs->CloseGameConfigFile(pGameConfig);
 
 	sharesys->AddDependency(myself, "bintools.ext", true, true);
 	
